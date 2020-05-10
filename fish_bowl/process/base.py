@@ -249,6 +249,7 @@ class SimulationGrid:
         simulation_params = self.get_simulation_parameters(self._sid)
         animals = self._persistence.get_animals_by_type(sim_id=self._sid, animal_type=animal_type).sample(frac=1)
         for _, animal in animals.iterrows():
+            _logger.debug(animal)
             if animal.oid in already_moved:
                 # this one has already moved so not moving
                 _logger.debug('{}{} already moved'.format(_debug, animal.oid))
@@ -263,7 +264,7 @@ class SimulationGrid:
                 for neigh in neighbors:
                     if not self._persistence.coordinate_is_occupied(self._sid, neigh):
                         # move animal to this slot
-                        _logger.debug('{}{} moved to {}'.format(_debug, animal_type.name, neigh))
+                        _logger.debug('{}{} oid[{}] moved to {}'.format(_debug, animal_type.name, animal.oid, neigh))
                         self._persistence.move_animal(sim_id=self._sid, animal_id=animal.oid, new_position=neigh)
                     else:
                         _logger.debug('{}{}: {} had no space to move to'.format(_debug, animal_type.name, animal.oid))

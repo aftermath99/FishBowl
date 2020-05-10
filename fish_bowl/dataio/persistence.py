@@ -105,7 +105,7 @@ class SimulationClient(SQLAlchemyQueries):
         assert shark_breed_maturity > 0, "shark_breed_maturity must be positive"
         assert shark_speed > 0, "shark_speed must be positive"
         assert shark_starving > 0, "shark_starving must be positive"
-
+        _logger.debug("init_simulation()")
         with self.session_scope() as s:
             s.add(Simulation(timestamp=dt.datetime.now(), grid_size=grid_size, init_nb_fish=init_nb_fish,
                              init_nb_shark=init_nb_shark, fish_breed_maturity=fish_breed_maturity,
@@ -123,6 +123,7 @@ class SimulationClient(SQLAlchemyQueries):
         :param sim_id:
         :return:
         """
+        _logger.debug("get_animal_in_position()")
         with self.session_scope() as s:
             return s.query(Simulation).filter(Simulation.sid == sim_id).one()
 
@@ -131,6 +132,7 @@ class SimulationClient(SQLAlchemyQueries):
         Retrieve all simulations in a panda DataFrame
         :return: DataFrame
         """
+        _logger.debug("get_animal_in_position()")
         with self.session_scope() as s:
             query = s.query(Simulation)
             return pd.read_sql(query.statement, query.session.bind)
@@ -140,7 +142,7 @@ class SimulationClient(SQLAlchemyQueries):
         use for single animal init
         :return:
         """
-
+        _logger.debug("get_animal_in_position()")
         with self.session_scope() as s:
             try:
                 simulation = s.query(Simulation).filter(Simulation.sid == sim_id).one()
@@ -166,6 +168,7 @@ class SimulationClient(SQLAlchemyQueries):
         :param coordinate:
         :return:
         """
+        _logger.debug("get_animal_in_position()")
         with self.session_scope() as s:
             query = s.query(Animals).filter(Animals.sim_id == sim_id, Animals.coord_x == coordinate.x,
                                             Animals.coord_y == coordinate.y, Animals.alive)
@@ -178,6 +181,7 @@ class SimulationClient(SQLAlchemyQueries):
         :param animal_id:
         :return:
         """
+        _logger.debug("get_animal_in_position()")
         with self.session_scope() as s:
             q = s.query(Animals).filter(Animals.sim_id == sim_id, Animals.oid == animal_id)
             return q.one()
@@ -190,6 +194,7 @@ class SimulationClient(SQLAlchemyQueries):
         :param live_only:
         :return:
         """
+        _logger.debug("get_animal_in_position()")
         with self.session_scope() as s:
             query = s.query(Animals).filter(Animals.sim_id == sim_id, Animals.coord_x == coordinate.x,
                                             Animals.coord_y == coordinate.y)
@@ -204,6 +209,7 @@ class SimulationClient(SQLAlchemyQueries):
         :param animal_type:
         :return:
         """
+        _logger.debug("get_animals_by_type()")
         with self.session_scope() as s:
             q = s.query(Animals).filter(Animals.sim_id == sim_id, Animals.alive, Animals.animal_type == animal_type)
             return pd.read_sql(q.statement, q.session.bind)
@@ -214,6 +220,7 @@ class SimulationClient(SQLAlchemyQueries):
         :param sim_id:
         :return:
         """
+        _logger.debug("get_animals_df()")
         with self.session_scope() as s:
             q = s.query(Animals).filter(Animals.sim_id == sim_id, Animals.alive)
             return pd.read_sql(q.statement, q.session.bind)
@@ -225,6 +232,7 @@ class SimulationClient(SQLAlchemyQueries):
         :param coordinates:
         :return:
         """
+        _logger.debug("has_fish_in_square()")
         fish_df = self.get_animals_by_type(sim_id=sim_id, animal_type=Animal.Fish)
         has_fish = []
         for coord in coordinates:
@@ -243,6 +251,7 @@ class SimulationClient(SQLAlchemyQueries):
         :param update_dict:
         :return:
         """
+        _logger.debug("update_animals()")
         scope = list(update_dict.keys())
         with self.session_scope() as s:
             animal_list = s.query(Animals).filter(Animals.sim_id == sim_id, Animals.alive).all()
@@ -263,6 +272,7 @@ class SimulationClient(SQLAlchemyQueries):
         :param animal_ids:
         :return:
         """
+        _logger.debug("kill_animal()")
         with self.session_scope() as s:
             animal_list = s.query(Animals).filter(Animals.sim_id == sim_id, Animals.alive).all()
             for animal in animal_list:
@@ -278,6 +288,7 @@ class SimulationClient(SQLAlchemyQueries):
         :param coordinate:
         :return:
         """
+        _logger.debug("eat_animal_in_square()")
         with self.session_scope() as s:
             try:
                 eaten_animal = s.query(Animals).filter(Animals.sim_id == sim_id, Animals.alive,
@@ -298,6 +309,7 @@ class SimulationClient(SQLAlchemyQueries):
         :param new_position:
         :return:
         """
+        _logger.debug("move_animal()")
         if self.coordinate_is_occupied(sim_id=sim_id, coordinate=new_position):
             raise NonEmptyCoordinate('Cannot move, coordinate {} is occupied'.format(new_position))
 

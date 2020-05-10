@@ -9,9 +9,10 @@ from fish_bowl.process.simple_display import display_simple_grid
 
 _logger = logging.getLogger(__name__)
 
+current_milli_time = lambda: int(round(time.time() * 1000))
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d:%(message)s")
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d:%(message)s")
     cmd_parser = argparse.ArgumentParser()
     cmd_parser.add_argument('--config_name', default='simulation_config_1',
                             help='Simulation configuration file name')
@@ -32,12 +33,13 @@ if __name__ == '__main__':
     grid = SimulationGrid(persistence=client, simulation_parameters=sim_config)
     print(display_simple_grid(client.get_animals_df(grid._sid), grid_size=sim_config['grid_size']))
     for turn in range(args.max_turn):
-        timer = time.time()
+        start_time = current_milli_time()
         grid.play_turn()
         print(''.join(['*'] * sim_config['grid_size'] * 2))
         print('Turn: {turn: ^{size}}'.format(turn=grid._sim_turn, size=sim_config['grid_size']))
         print()
         print(display_simple_grid(grid.get_simulation_grid_data(), sim_config['grid_size']))
         print()
-        print('Turn duration: {:<3}s'.format(int(time.time()-timer)))
+        end_time = current_milli_time()
+        print('Turn duration: {} ms'.format(end_time - start_time))
         print()
