@@ -28,16 +28,15 @@ class FishTank(object):
         :param coord: coordinate tuple
         :param animal: Animal to put in such as Fish and Shark
         """
+        # _logger.debug("put_animal() - animal ({}) at [{}]".format(animal.oid, coord))
         self._grid[coord] = animal
-        # TODO check if holding other dicts is useful/performant
-        # check using objects as keys in dict
-        self._shark_dict[animal] = coord
-        # TODO if animal is shark, elif, etc
 
     def move_animal(self, old_coord, animal, new_coord):
-        animal_in_grid = self._grid.pop(old_coord, None)
-        # should check old vs new animal
-        self._grid[new_coord] = animal
+        move_animal = self._grid.pop(old_coord)
+        if move_animal.oid != animal.oid:
+            raise Exception("move_animal() - Request animal oid ({}) is not "
+                            "the same oid as the current occupant ({})".format(animal.oid, move_animal.oid))
+        self._grid[new_coord] = move_animal
 
     def get_grid(self):
         return self._grid
@@ -57,15 +56,13 @@ class FishTank(object):
         return number_sharks
 
     def remove_starved_sharks(self, current_turn, shark_starving):
-        remove_coords = []
-        for coord, animal in self._grid.items():
+        _logger.debug("remove_starved_sharks() - sim turn {}".format(current_turn))
+        for coord, animal in self._grid.copy().items():
             if animal.animal_type == Animal.Shark:
                 turns_not_fed = current_turn - animal.last_fed
                 if turns_not_fed > shark_starving:
-                    remove_coords.append(coord)
-        for remove_coord in remove_coords:
-            _logger.debug("remove_starved_sharks() - Removing shark at [{}]".format(remove_coord))
-            self._grid.pop(remove_coord, None)
+                    _logger.debug("remove_starved_sharks() - Removing shark ({}) at [{}]".format(animal.oid, coord))
+                    self._grid.pop(coord, None)
 
     def get_current_sharks(self):
         # tuple of coord and animal
@@ -82,8 +79,9 @@ class FishTank(object):
         startx, starty = coord
         for k, (x, y) in SQUARE_NEIGH.items():
             new_coord = (startx + x, starty + y)
-            _logger.debug("Looking for fish at : [{}]".format(new_coord))
             if self.is_valid_grid_coord(coordinates=new_coord, raise_err=False):
+                # normally this should be trace
+                _logger.debug("find_fish_to_eat() - Looking for fish at : [{}]".format(new_coord))
                 animal = self.check_animal(new_coord)
                 if animal is None:
                     continue
@@ -102,7 +100,8 @@ class FishTank(object):
 
         self.move_animal(shark_coord, shark_eater, fish_coord)
         shark_eater.last_fed = sim_turn
-        _logger.debug("eat_fish() - Shark {} has eaten fish {} at [{}]".format(shark_eater.oid, fish_eaten.oid, fish_coord))
+        _logger.debug("eat_fish() - Shark {} has eaten fish {} at [{}]".format(shark_eater.oid, fish_eaten.oid,
+                                                                               fish_coord))
 
     def find_available_nearby_space(self, start_coordinate, shuffle: bool = True):
         """
@@ -122,7 +121,7 @@ class FishTank(object):
 
         if shuffle:
             random.shuffle(available_neighbors)
-        _logger.debug("find_available_nearby_space() - {}".format(available_neighbors))
+        # _logger.debug("find_available_nearby_space() - {}".format(available_neighbors))
         return available_neighbors
 
     # is_valid_grid_coord (different shapes and/or pacman style)
@@ -152,32 +151,39 @@ class FishTank(object):
 
     def print_output(self):
         print("")
-        for x in range(0, self.grid_size):
-            for y in range(0, self.grid_size):
+        for y in range(0, self.grid_size):
+            for x in range(0, self.grid_size):
                 coord = (x, y)
                 if coord in self._grid:
                     animal = self._grid[(x, y)]
                     print("{} ".format(animal), end='')
                 else:
-                    print("000 ", end='')
+                    print("0000 ", end='')
             print("")
 
-    def create_numpy_array(self):
-        pass
-
-    def create_pandas_dataframe(self):
-        pass
+    def create_pandas_dataframe(self) -> pd.DataFrame:
+        string_rep_list = []
+        for y in range(0, self.grid_size):
+            for x in range(0, self.grid_size):
+                coord = (x, y)
+                if coord in self._grid:
+                    animal = self._grid[(x, y)]
+                    string_rep_list.append("{}".format(animal))
+                else:
+                    string_rep_list.append("0000")
+        grid_data_frame = pd.array(string_rep_list, dtype="string")
+        return grid_data_frame
 
     def __repr__(self):
         str_repr = "\r\n"
-        for x in range(0, self.grid_size):
+        for y in range(0, self.grid_size):
             row_list = []
-            for y in range(0, self.grid_size):
+            for x in range(0, self.grid_size):
                 coord = (x, y)
                 if coord in self._grid:
                     animal = self._grid[(x, y)]
                     row_list.append("{}".format(animal))
                 else:
-                    row_list.append("000")
+                    row_list.append("0000")
             str_repr += " ".join(row_list) + "\r\n"
         return str_repr

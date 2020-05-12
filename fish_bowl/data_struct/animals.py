@@ -3,7 +3,7 @@ from fish_bowl.process.utils import Animal
 
 class Fish(object):
 
-    start_oid = 100
+    start_oid = 1000
 
     def __init__(self, sim_id, spawn_turn):
         self.oid = Fish.start_oid
@@ -20,15 +20,15 @@ class Fish(object):
 
 
 class Shark(Fish):
-    start_oid = 200
+    start_oid = 2000
 
     def __init__(self, sim_id, spawn_turn):
         super().__init__(sim_id, spawn_turn)
         self.oid = Shark.start_oid
         Shark.start_oid += 1
         self.animal_type = Animal.Shark
-        # turn of last fed
-        self.last_fed = 0
+        # turn of last fed same as spawn at construction
+        self.last_fed = spawn_turn
 
     # oid =
     # sim_id =

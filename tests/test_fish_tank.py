@@ -16,11 +16,11 @@ class TestFishTank:
         fish_tank = FishTank(grid_size)
 
         coord1 = (0, 1)
-        animal1 = "012"
+        animal1 = "1200"
         fish_tank.put_animal(coord1, animal1)
 
         coord2 = (1, 1)
-        animal2 = "014"
+        animal2 = "1400"
         fish_tank.put_animal(coord2, animal2)
 
         fish_tank.print_output()
@@ -98,17 +98,20 @@ class TestFishTank:
 
         fish_tank.print_output()
 
-    @pytest.mark.skip(reason="not implemented")
-    def test_add_1_shark(self):
-        _logger.info("\r\n")
+    def test_get_dataframe(self):
         grid_size = 10
         fish_tank = FishTank(grid_size)
-        coord1 = (0, 0)
 
-        # add one fish at (0,1) and re-test
-        coord4 = (1, 0)
-        fish1 = Fish(0, 1)
-        fish_tank.put_animal(coord4, fish1)
-        nearby_space = fish_tank.find_available_nearby_space(coord1)
-        assert len(nearby_space) == 2
+        coord1 = (0, 1)
+        animal1 = "1200"
+        fish_tank.put_animal(coord1, animal1)
+
+        coord2 = (1, 1)
+        animal2 = "1400"
+        fish_tank.put_animal(coord2, animal2)
+
+        pandas_df = fish_tank.create_pandas_dataframe()
+        _logger.info(pandas_df.shape)
+        _logger.info("dataframe: {}".format(pandas_df))
+
 

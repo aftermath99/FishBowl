@@ -1,5 +1,4 @@
 import pandas as pd
-from fish_bowl.dataio.persistence import Simulation
 
 
 class SimulationEngine:
@@ -11,7 +10,7 @@ class SimulationEngine:
     def get_simulation_grid_data(self) -> pd.DataFrame:
         pass
 
-    def check_simulation_ends(self):
+    def _check_simulation_ends(self):
         pass
 
     def play_turn(self):

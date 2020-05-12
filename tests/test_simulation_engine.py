@@ -2,11 +2,9 @@ import pytest
 import logging
 import time
 
-from fish_bowl.data_struct.fish_tank import FishTank
-from fish_bowl.data_struct.animals import Shark, Fish
 from fish_bowl.process.simple_simulation_engine import SimpleSimulationEngine
 
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d:%(message)s")
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(filename)s:[%(lineno)d]: %(message)s")
 _logger = logging.getLogger(__name__)
 
 sim_config = {
@@ -16,14 +14,17 @@ sim_config = {
     'fish_breed_probability': 40,
     'fish_speed': 2,
     'init_nb_shark': 5,
-    'shark_breed_maturity': 5,
-    'shark_breed_probability': 60,
+    'shark_breed_maturity': 3,
+    'shark_breed_probability': 90,
     'shark_speed': 4,
     'shark_starving': 2,
-    'max_turns': 6
+    'max_turns': 10
 }
 
-current_milli_time = lambda: int(round(time.time() * 1000))
+
+def current_milli_time():
+    return int(round(time.time() * 1000))
+
 
 class TestSimulationEngine:
 
@@ -32,18 +33,22 @@ class TestSimulationEngine:
         simple_sim_engine = SimpleSimulationEngine(sim_config)
         simple_sim_engine.display_simple_grid()
 
-    def test_shark_starvation(self):
+    def test_fish_bowl_sim_engine(self):
         simple_sim_engine = SimpleSimulationEngine(sim_config)
         simple_sim_engine.display_simple_grid()
 
         for sim_turn in range(sim_config["max_turns"]):
-            simple_sim_engine.play_turn()
-            simple_sim_engine.display_simple_grid()
+            start_time = current_milli_time()
+            try:
+                simple_sim_engine.play_turn()
+                simple_sim_engine.display_simple_grid()
+            except Exception as e:
+                _logger.error(e)
+                break
+
+            end_time = current_milli_time()
+            _logger.warning('Turn {} duration: {} ms'.format(sim_turn, (end_time - start_time)))
             if simple_sim_engine.sim_ended:
                 break
-        simple_sim_engine.display_simple_grid()
 
-
-
-
-
+        simple_sim_engine.print_stats()
