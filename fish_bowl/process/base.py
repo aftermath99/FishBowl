@@ -275,6 +275,7 @@ class SimulationGrid:
         Simulation ends if Sharks have disappeared
         :return:
         """
+        # TODO missing max turns check
         if len(self._persistence.get_animals_by_type(sim_id=self._sid, animal_type=Animal.Shark)) == 0:
             raise EndOfSimulatioError('Simulation ends because no more Sharks')
 
@@ -295,6 +296,7 @@ class SimulationGrid:
         fed_sharks = self._eat()
         moved_animals = self._breed_and_move(fed_sharks=fed_sharks)
         self._move(already_moved=moved_animals)
+        # TODO incrementing turn for next round, misleading for current state
         self._sim_turn += 1
         _logger.debug('********************END***************************'.format(self._sim_turn))
         self.check_simulation_ends()

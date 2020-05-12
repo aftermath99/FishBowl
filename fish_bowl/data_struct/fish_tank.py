@@ -2,6 +2,8 @@ import logging
 
 from fish_bowl.process.topology import *
 
+from fish_bowl.process.utils import Animal
+
 _logger = logging.getLogger(__name__)
 
 
@@ -36,6 +38,24 @@ class FishTank(object):
             return animal
         else:
             return None
+
+    def get_current_number_sharks(self):
+        number_sharks = 0
+        for coord, animal in self._grid.items():
+            if animal.animal_type == Animal.Shark:
+                number_sharks += 1
+        return number_sharks
+
+    def remove_starved_sharks(self, current_turn, shark_starving):
+        remove_coords = []
+        for coord, animal in self._grid.items():
+            if animal.animal_type == Animal.Shark:
+                turns_not_fed = current_turn - animal.last_fed
+                if turns_not_fed > shark_starving:
+                    remove_coords.append(coord)
+        for remove_coord in remove_coords:
+            _logger.debug("remove_starved_sharks() - Removing shark at [{}]".format(remove_coord))
+            self._grid.pop(remove_coord, None)
 
     def find_available_nearby_space(self, start_coordinate, shuffle: bool = True):
         """

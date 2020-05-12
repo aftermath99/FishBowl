@@ -2,7 +2,7 @@ import pytest
 import logging
 
 from fish_bowl.data_struct.fish_tank import FishTank
-from fish_bowl.data_struct.animals import *
+from fish_bowl.data_struct.animals import Shark, Fish
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d:%(message)s")
 _logger = logging.getLogger(__name__)
