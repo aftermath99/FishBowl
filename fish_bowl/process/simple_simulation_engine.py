@@ -92,7 +92,8 @@ class SimpleSimulationEngine(SimulationEngine):
         return
 
     def display_simple_grid(self):
-        self._fish_tank.print_output()
+        _logger.info("\r\nDisplay grid, turn {}".format(self._sim_turn))
+        _logger.info(self._fish_tank)
 
     def get_simulation_parameters(self, sim_id: int = None) -> Dict:
         return self._simulation_parameters
@@ -136,8 +137,9 @@ class SimpleSimulationEngine(SimulationEngine):
         self._sim_turn += 1
         _logger.debug('********************TURN: {:<3}********************'.format(self._sim_turn))
         self._remove_dead_sharks(self._sim_turn)
-        fed_sharks = self._feed_sharks()
-        self._move_remaining_animals(already_moved=fed_sharks)
+        fed_sharks_oid_dict = self._feed_sharks()
+        fed_and_moved_oid_list = self._breed_animals(fed_sharks_oid_dict=fed_sharks_oid_dict)
+        #self._move_remaining_animals(already_moved=fed_and_moved_oid_list)
 
         _logger.debug('********************END TURN: {:<3}*******************'.format(self._sim_turn))
         self.sim_ended = self.check_simulation_ends()
@@ -146,9 +148,74 @@ class SimpleSimulationEngine(SimulationEngine):
         self._fish_tank.remove_starved_sharks(self._sim_turn, self._shark_starving)
 
     def _feed_sharks(self):
+        fed_sharks_oid_dict = {}
+        current_sharks_tuple_list = self._fish_tank.get_current_sharks()
+        for shark_coord, shark in current_sharks_tuple_list:
+            _logger.debug("Looking for fish around shark : [{}]".format(shark_coord))
+            fish_tuple = self._fish_tank.find_fish_to_eat(shark_coord)
+            if fish_tuple is None:
+                pass
+            else:
+                fish_coord, fish_to_eat = fish_tuple
+                self._fish_tank.eat_fish(self._sim_turn, shark_coord, fish_coord)
+                fed_sharks_oid_dict[shark.oid] = shark_coord
+        return fed_sharks_oid_dict
+
+    def _move_remaining_animals(self, already_moved_oid_list):
         pass
 
-    def _move_remaining_animals(self, already_moved):
-        pass
 
+    def _breed_animals(self, fed_sharks_oid_dict):
+        """
+        Breed animals where possible
+        Sharks first, but must check if they have fed (which indicates movement)
+        :param fed_sharks_oid_dict: dict of shark oid to original coords in turn. Tracks already moved animals.
+        """
+        already_moved_animals = fed_sharks_oid_dict
+        fish_tank_grid = self._fish_tank.get_grid()
+        # TODO test this for duplicates and clobbering
+        for coord, animal in fish_tank_grid.copy().items():
+            if animal.animal_type == Animal.Shark:
+                self._breed_shark(animal, coord, already_moved_animals)
+        for coord, animal in fish_tank_grid.copy().items():
+            if animal.animal_type == Animal.Fish:
+                self._breed_fish(animal, coord, already_moved_animals)
+        return already_moved_animals
+        # TODO collect Audit actions
 
+    def _breed_fish(self, animal, coord, already_moved_animals):
+        if (self._sim_turn - animal.spawn_turn) >= self._fish_breed_maturity:
+            # fish can breed
+            if random.randint(0, 100) <= self._fish_breed_probability:
+                available_neighbors = self._fish_tank.find_available_nearby_space(coord)
+                if len(available_neighbors) > 0:
+                    baby_fish = Fish(self._sid, self._sim_turn)
+                    move_parent_coord = available_neighbors[0]
+                    self._fish_tank.move_animal(coord, animal, move_parent_coord)
+                    _logger.debug("_breed_fish() - move parent fish ({}) to [{}]".format(animal.oid, move_parent_coord))
+                    already_moved_animals[animal.oid] = coord
+                    self._fish_tank.put_animal(coord, baby_fish)
+                    _logger.debug("_breed_fish() - new fish ({}) at [{}]".format(baby_fish.oid, coord))
+
+    def _breed_shark(self, animal, coord, already_moved_animals):
+        if (self._sim_turn - animal.spawn_turn) >= self._shark_breed_maturity:
+            # shark can breed
+            if random.randint(0, 100) <= self._shark_breed_probability:
+                # shark is breeding
+                animal.breed_count += 1
+                animal.last_breed = self._sim_turn
+                baby_shark = Shark(self._sid, self._sim_turn)
+                if animal.oid in already_moved_animals:
+                    # use original coord
+                    breed_coord = already_moved_animals[animal.oid]
+                    self._fish_tank.put_animal(breed_coord, baby_shark)
+                else:
+                    # find random neighbor
+                    available_neighbors = self._fish_tank.find_available_nearby_space(coord)
+                    if len(available_neighbors) > 0:
+                        move_parent_coord = available_neighbors[0]
+                        self._fish_tank.move_animal(coord, animal, move_parent_coord)
+                        _logger.debug("_breed_shark() - move parent shark ({}) to [{}]".format(animal.oid, move_parent_coord))
+                        already_moved_animals[animal.oid] = coord
+                        self._fish_tank.put_animal(coord, baby_shark)
+                        _logger.debug("_breed_shark() - new shark ({}) at [{}]".format(baby_shark.oid, coord))

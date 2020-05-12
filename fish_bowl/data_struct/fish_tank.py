@@ -1,6 +1,10 @@
 import logging
+from typing import Dict, List, Tuple
+import random
+import numpy as np
+import pandas as pd
 
-from fish_bowl.process.topology import *
+from fish_bowl.process.topology import SQUARE_NEIGH, TopologyError
 
 from fish_bowl.process.utils import Animal
 
@@ -19,7 +23,13 @@ class FishTank(object):
         self._fish_dict = {}
 
     def put_animal(self, coord, animal):
+        """
+        Place an animal into the fish tank grid
+        :param coord: coordinate tuple
+        :param animal: Animal to put in such as Fish and Shark
+        """
         self._grid[coord] = animal
+        # TODO check if holding other dicts is useful/performant
         # check using objects as keys in dict
         self._shark_dict[animal] = coord
         # TODO if animal is shark, elif, etc
@@ -57,6 +67,43 @@ class FishTank(object):
             _logger.debug("remove_starved_sharks() - Removing shark at [{}]".format(remove_coord))
             self._grid.pop(remove_coord, None)
 
+    def get_current_sharks(self):
+        # tuple of coord and animal
+        current_sharks = []
+        for coord, animal in self._grid.items():
+            if animal.animal_type == Animal.Shark:
+                current_sharks.append((coord, animal))
+        return current_sharks
+
+    def find_fish_to_eat(self, coord):
+        """
+        Given a shark coordinate, return the first available fish and it's coordinate to eat
+        """
+        startx, starty = coord
+        for k, (x, y) in SQUARE_NEIGH.items():
+            new_coord = (startx + x, starty + y)
+            _logger.debug("Looking for fish at : [{}]".format(new_coord))
+            if self.is_valid_grid_coord(coordinates=new_coord, raise_err=False):
+                animal = self.check_animal(new_coord)
+                if animal is None:
+                    continue
+                if animal.animal_type == Animal.Fish:
+                    _logger.debug("find_fish_to_eat() - Found fish at : [{}]".format(new_coord))
+                    return new_coord, animal
+
+    # action - db records only actions
+    # move
+    # eat
+    # breed
+    def eat_fish(self, sim_turn, shark_coord, fish_coord):
+        shark_eater = self._grid[shark_coord]
+        fish_eaten = self._grid.pop(fish_coord)
+        fish_eaten.alive = False
+
+        self.move_animal(shark_coord, shark_eater, fish_coord)
+        shark_eater.last_fed = sim_turn
+        _logger.debug("eat_fish() - Shark {} has eaten fish {} at [{}]".format(shark_eater.oid, fish_eaten.oid, fish_coord))
+
     def find_available_nearby_space(self, start_coordinate, shuffle: bool = True):
         """
         for a given coordinate, return all available neighbours
@@ -64,8 +111,6 @@ class FishTank(object):
         :param shuffle: boolean to shuffle the return coordinates
         :return: List of free neighboring coordinates
         """
-        # build coordinate
-        # check if occupied
         available_neighbors = []
         startx, starty = start_coordinate
         for k, (x, y) in SQUARE_NEIGH.items():
@@ -107,8 +152,8 @@ class FishTank(object):
 
     def print_output(self):
         print("")
-        for x in range(0, self.grid_size - 1):
-            for y in range(0, self.grid_size - 1):
+        for x in range(0, self.grid_size):
+            for y in range(0, self.grid_size):
                 coord = (x, y)
                 if coord in self._grid:
                     animal = self._grid[(x, y)]
@@ -117,6 +162,22 @@ class FishTank(object):
                     print("000 ", end='')
             print("")
 
+    def create_numpy_array(self):
+        pass
 
+    def create_pandas_dataframe(self):
+        pass
 
-
+    def __repr__(self):
+        str_repr = "\r\n"
+        for x in range(0, self.grid_size):
+            row_list = []
+            for y in range(0, self.grid_size):
+                coord = (x, y)
+                if coord in self._grid:
+                    animal = self._grid[(x, y)]
+                    row_list.append("{}".format(animal))
+                else:
+                    row_list.append("000")
+            str_repr += " ".join(row_list) + "\r\n"
+        return str_repr

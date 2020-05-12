@@ -10,7 +10,7 @@ _logger = logging.getLogger(__name__)
 
 class TestFishTank:
 
-    def test_insert_and_get(self):
+    def test_insert_and_get_fish(self):
 
         grid_size = 10
         fish_tank = FishTank(grid_size)
@@ -50,7 +50,7 @@ class TestFishTank:
         nearby_space = fish_tank.find_available_nearby_space(coord3)
         assert len(nearby_space) == 3
 
-    def test_add_1_fish(self):
+    def test_add_1_fish_2_sharks(self):
         _logger.info("\r\n")
         grid_size = 10
         fish_tank = FishTank(grid_size)
@@ -74,7 +74,27 @@ class TestFishTank:
         fish_tank.put_animal(shark2_coord, shark2)
 
         nearby_space = fish_tank.find_available_nearby_space(shark1_coord)
-        # assert len(nearby_space) == 2
+        assert len(nearby_space) == 7
+
+        fish_tank.print_output()
+
+        current_sharks_tuple = fish_tank.get_current_sharks()
+        assert len(current_sharks_tuple) == 2
+
+        sim_turn = 1
+        for shark_coord, shark in current_sharks_tuple:
+            _logger.info("Looking for fish around shark : [{}]".format(shark_coord))
+            fish_tuple = fish_tank.find_fish_to_eat(shark_coord)
+            _logger.info(type(fish_tuple))
+            if fish_tuple is None:
+                pass
+            else:
+                fish_coord, fish_to_eat = fish_tuple
+                if shark == shark1:
+                    assert fish_to_eat is not None
+                fish_tank.eat_fish(1, shark_coord, fish_coord)
+                if shark == shark1:
+                    assert shark.last_fed == 1
 
         fish_tank.print_output()
 
