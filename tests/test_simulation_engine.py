@@ -49,7 +49,7 @@ class TestSimulationEngine:
         simple_sim_engine.print_stats()
 
         assert simple_sim_engine.max_turns == 8
-
+        assert simple_sim_engine.sim_turn > 0
 
     def test_pacman_fish_bowl_sim_engine(self):
         simple_sim_engine = SimpleSimulationEngine(sim_config.copy(), use_pacman=True)
@@ -72,4 +72,4 @@ class TestSimulationEngine:
         simple_sim_engine.print_stats()
 
         assert simple_sim_engine.max_turns == 8
-
+        assert simple_sim_engine.sim_turn > 0

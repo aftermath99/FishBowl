@@ -30,6 +30,12 @@ class FishTank(object):
         self._grid[coord] = animal
 
     def move_animal(self, old_coord, animal, new_coord):
+        """
+        Move any animal
+        :param old_coord: Start coordinates
+        :param animal: Animal to move
+        :param new_coord: Target coordinates to move to
+        """
         move_animal = self._grid.pop(old_coord)
         if move_animal.oid != animal.oid:
             raise Exception("move_animal() - Request animal oid ({}) is not "
@@ -40,13 +46,21 @@ class FishTank(object):
         return self._grid
 
     def check_animal(self, coord):
+        """
+        Check if an animal exists in the coordinates
+        :param coord: Coordinates to check
+        :return: animal if found
+        """
         if coord in self._grid:
             animal = self._grid[coord]
             return animal
         else:
             return None
 
-    def get_current_number_sharks(self):
+    def get_current_number_sharks(self) -> int:
+        """
+        Count the current number of sharks in the Fish Tank
+        """
         number_sharks = 0
         for coord, animal in self._grid.items():
             if animal.animal_type == Animal.Shark:
@@ -54,6 +68,11 @@ class FishTank(object):
         return number_sharks
 
     def remove_starved_sharks(self, current_turn, shark_starving):
+        """
+        Remove starved sharks
+        :param current_turn: The current simulation turn
+        :param shark_starving: number of turns before a shark can starve (simulation param)
+        """
         _logger.debug("remove_starved_sharks() - sim turn {}".format(current_turn))
         for coord, animal in self._grid.copy().items():
             if animal.animal_type == Animal.Shark:
@@ -63,6 +82,10 @@ class FishTank(object):
                     self._grid.pop(coord, None)
 
     def get_current_sharks(self) -> List:
+        """
+        Get current list of sharks with coords
+        :return: List of sharks and coordinates
+        """
         # tuple of coord and animal
         current_sharks = []
         for coord, animal in self._grid.items():
@@ -113,7 +136,7 @@ class FishTank(object):
         new_coord = (startx + x, starty + y)
         return new_coord
 
-    def find_available_nearby_space(self, start_coordinate, shuffle: bool = True):
+    def find_available_nearby_space(self, start_coordinate, shuffle: bool = True) -> List[Tuple]:
         """
         for a given coordinate, return all available neighbours
         :param start_coordinate: starting coordinate tuple
@@ -175,6 +198,9 @@ class FishTank(object):
             print("")
 
     def create_pandas_dataframe(self) -> pd.DataFrame:
+        """
+        Generate a Pandas dataframe representation
+        """
         string_rep_list = []
         for y in range(0, self.grid_size):
             for x in range(0, self.grid_size):

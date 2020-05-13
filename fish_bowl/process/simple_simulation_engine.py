@@ -8,7 +8,7 @@ from fish_bowl.process.simulation_engine import SimulationEngine
 from fish_bowl.data_struct.fish_tank import FishTank, PacmanFishTank
 from fish_bowl.data_struct.animals import *
 
-from fish_bowl.dataio.threaded_persistence import PersistenceClient, get_database_string, Animals
+from fish_bowl.dataio.threaded_persistence import PersistenceClient, get_database_string
 
 _logger = logging.getLogger(__name__)
 
