@@ -18,7 +18,7 @@ sim_config = {
     'shark_breed_probability': 90,
     'shark_speed': 4,
     'shark_starving': 2,
-    'max_turns': 10
+    'max_turns': 2
 }
 
 
@@ -27,11 +27,6 @@ def current_milli_time():
 
 
 class TestSimulationEngine:
-
-    @pytest.mark.skip(reason="works")
-    def test_simulation_init(self):
-        simple_sim_engine = SimpleSimulationEngine(sim_config)
-        simple_sim_engine.display_simple_grid()
 
     def test_fish_bowl_sim_engine(self):
         simple_sim_engine = SimpleSimulationEngine(sim_config)
@@ -52,3 +47,7 @@ class TestSimulationEngine:
                 break
 
         simple_sim_engine.print_stats()
+
+        assert simple_sim_engine.max_turns == 2
+
+

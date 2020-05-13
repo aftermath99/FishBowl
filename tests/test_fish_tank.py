@@ -16,19 +16,21 @@ class TestFishTank:
         fish_tank = FishTank(grid_size)
 
         coord1 = (0, 1)
-        animal1 = "1200"
-        fish_tank.put_animal(coord1, animal1)
+        fish1 = Fish(0, 1)
+        fish_tank.put_animal(coord1, fish1)
 
         coord2 = (1, 1)
-        animal2 = "1400"
-        fish_tank.put_animal(coord2, animal2)
+        fish2 = Fish(0, 1)
+        fish_tank.put_animal(coord2, fish2)
 
         fish_tank.print_output()
 
         coord3 = (2, 2)
-        fish_tank.move_animal(coord2, animal2, coord3)
+        fish_tank.move_animal(coord2, fish2, coord3)
 
         fish_tank.print_output()
+        fish_tank_grid = fish_tank.get_grid()
+        assert fish_tank_grid[coord3] == fish2
 
     def test_nearby_space(self):
         _logger.info("\r\n")
