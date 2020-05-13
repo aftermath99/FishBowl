@@ -6,6 +6,8 @@ import pandas as pd
 from fish_bowl.process.topology import SQUARE_NEIGH, TopologyError
 from fish_bowl.process.utils import Animal
 
+NO_OBJECT_OID = "0000"
+
 _logger = logging.getLogger(__name__)
 
 
@@ -199,38 +201,43 @@ class FishTank(object):
                     animal = self._grid[(x, y)]
                     print("{} ".format(animal), end='')
                 else:
-                    print("0000 ", end='')
+                    print("{} ".format(NO_OBJECT_OID), end='')
             print("")
 
     def create_pandas_dataframe(self) -> pd.DataFrame:
         """
-        Generate a Pandas dataframe representation
+        Generate a Pandas DataFrame representation
         """
-        string_rep_list = []
+        grid_data_frame = pd.DataFrame()
         for y in range(0, self.grid_size):
-            for x in range(0, self.grid_size):
-                coord = (x, y)
-                if coord in self._grid:
-                    animal = self._grid[(x, y)]
-                    string_rep_list.append("{}".format(animal))
-                else:
-                    string_rep_list.append("0000")
-        grid_data_frame = pd.array(string_rep_list, dtype="string")
+            row_string_list = self._build_x_row_list(y)
+            x_series = pd.Series(row_string_list, name="{}".format(y))
+            grid_data_frame[y] = x_series
         return grid_data_frame
 
     def __repr__(self):
         str_repr = "\r\n"
         for y in range(0, self.grid_size):
-            row_list = []
-            for x in range(0, self.grid_size):
-                coord = (x, y)
-                if coord in self._grid:
-                    animal = self._grid[(x, y)]
-                    row_list.append("{}".format(animal))
-                else:
-                    row_list.append("0000")
+            row_list = self._build_x_row_list(y)
             str_repr += " ".join(row_list) + "\r\n"
         return str_repr
+
+    def _build_x_row_list(self, y) -> List[str]:
+        """
+        Build a string list from a grid row
+        :param y: column id to evaluate
+        :return: List of oid values or "0000" if none
+        """
+        row_string_list = []
+        for x in range(0, self.grid_size):
+            coord = (x, y)
+            if coord in self._grid:
+                animal = self._grid[(x, y)]
+                row_string_list.append("{}".format(animal))
+            else:
+                row_string_list.append(NO_OBJECT_OID)
+        return row_string_list
+
 
 
 class PacmanFishTank(FishTank):

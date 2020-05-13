@@ -8,5 +8,6 @@
   "shark_breed_maturity": 5,
   "shark_breed_probability": 100,
   "shark_speed": 4,
-  "shark_starving": 4
+  "shark_starving": 4,
+  "max_turns": 100
 }

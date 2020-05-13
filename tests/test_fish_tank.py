@@ -114,7 +114,7 @@ class TestFishTank:
 
         pandas_df = fish_tank.create_pandas_dataframe()
         _logger.info(pandas_df.shape)
-        _logger.info("dataframe: {}".format(pandas_df))
+        _logger.info("dataframe: \r\n{}".format(pandas_df))
 
 
     def test_pacman_fishtank(self):

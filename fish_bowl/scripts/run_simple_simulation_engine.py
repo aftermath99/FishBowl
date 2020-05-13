@@ -2,10 +2,8 @@ import logging
 import argparse
 import time
 
-from fish_bowl.dataio.persistence import SimulationClient, get_database_string
-from fish_bowl.process.base import SimulationGrid
+from fish_bowl.process.simple_simulation_engine import SimpleSimulationEngine
 from fish_bowl.common.config_reader import read_simulation_config
-from fish_bowl.process.simple_display import display_simple_grid
 
 _logger = logging.getLogger(__name__)
 
@@ -15,7 +13,9 @@ def current_milli_time():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d:%(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(filename)s:[%(lineno)d]: %(message)s")
+
+    total_start_time = current_milli_time()
     cmd_parser = argparse.ArgumentParser()
     cmd_parser.add_argument('--config_name', default='simulation_config_1',
                             help='Simulation configuration file name')
@@ -30,19 +30,26 @@ if __name__ == '__main__':
                                   ' repository has not been implemented yet')
     # Load simulation configuration
     sim_config = read_simulation_config(args.config_name)
-    # Instantiate client
-    client = SimulationClient(get_database_string())
-    # display initial grid
-    grid = SimulationGrid(persistence=client, simulation_parameters=sim_config)
-    print(display_simple_grid(client.get_animals_df(grid._sid), grid_size=sim_config['grid_size']))
-    for turn in range(args.max_turn):
+
+    simulation_engine = SimpleSimulationEngine(sim_config)
+    simulation_engine.display_simple_grid()
+    _logger.info('max_turns: {}'.format(simulation_engine.max_turns))
+
+    for sim_turn in range(simulation_engine.max_turns):
         start_time = current_milli_time()
-        grid.play_turn()
-        print(''.join(['*'] * sim_config['grid_size'] * 2))
-        print('Turn: {turn: ^{size}}'.format(turn=grid._sim_turn, size=sim_config['grid_size']))
-        print()
-        print(display_simple_grid(grid.get_simulation_grid_data(), sim_config['grid_size']))
-        print()
+        _logger.info('Turn: {}'.format(simulation_engine.sim_turn))
+        try:
+            simulation_engine.play_turn()
+            simulation_engine.display_simple_grid()
+        except Exception as e:
+            _logger.error(e)
+            break
         end_time = current_milli_time()
-        print('Turn duration: {} ms'.format(end_time - start_time))
-        print()
+        _logger.warning('Turn {} duration: {} ms'.format(sim_turn, (end_time - start_time)))
+        if simulation_engine.sim_ended:
+            _logger.warning("Simulation has ended")
+            break
+
+    total_end_time = current_milli_time()
+    _logger.warning('Total duration: {} ms'.format(total_end_time - total_start_time))
+    simulation_engine.print_stats()
