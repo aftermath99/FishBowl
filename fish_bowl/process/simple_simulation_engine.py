@@ -14,12 +14,17 @@ _logger = logging.getLogger(__name__)
 
 
 class SimpleSimulationEngine(SimulationEngine):
+    """
+    The SimpleSimulationEngine holds all business logic for the simulation and makes calls to the FishTank for
+    state changes
+    """
     start_sid = 1
 
     def __init__(self, simulation_parameters: Dict, use_pacman=False):
         """
-        Create a simulation and link to its persistence
+        Initialise internals such as FishTank
         :param simulation_parameters:
+        :param use_pacman: use a Pacman style topology
         """
         self._sid = SimpleSimulationEngine.start_sid
         SimpleSimulationEngine.start_sid += 1
@@ -84,7 +89,6 @@ class SimpleSimulationEngine(SimulationEngine):
         grid_size = self._grid_size
         coord_array = [(x, y) for x in range(grid_size) for y in range(grid_size)]
         random.shuffle(coord_array)
-        # spawn fish and Sharks
         fishes = 0
         sharks = 0
         for coord in coord_array:
@@ -101,13 +105,24 @@ class SimpleSimulationEngine(SimulationEngine):
         return
 
     def display_simple_grid(self):
+        """
+        Log out grid with fish/shark oid positions
+        """
         _logger.info("\r\nDisplay grid, turn {}".format(self._sim_turn))
         _logger.info(self._fish_tank)
 
     def get_simulation_parameters(self, sim_id: int = None) -> Dict:
+        """
+        Return simulation params - used to maintain compatibility with base.py SimulationGrid
+        :return: Dictionary of sim params
+        """
         return self._simulation_parameters
 
     def get_simulation_grid_data(self) -> pd.DataFrame:
+        """
+        Retrieve Pandas DataFrame of fish tank
+        :return: Pandas DataFrame
+        """
         grid_data_frame = self._fish_tank.create_pandas_dataframe()
         return grid_data_frame
 
@@ -116,6 +131,7 @@ class SimpleSimulationEngine(SimulationEngine):
         Check if the simulation has completed. Either
         1) The max number of turns has been reached or
         2) There are no sharks in the tank
+        :return: True if the simulation has ended or False
         """
         if self._sim_turn == self._max_turns:
             _logger.info('Simulation completed.  Max turns: {}'.format(self._max_turns))
@@ -146,18 +162,18 @@ class SimpleSimulationEngine(SimulationEngine):
         animal move (fish first then sharks)
         turn ends
 
-        :return:
         """
         if self.sim_ended:
             # TODO throw exception
+            _logger.warning("Simulation id ({}) has ended".format(self._sid))
             return
 
         self._sim_turn += 1
         _logger.debug('********************TURN: {:<3}********************'.format(self._sim_turn))
         self._remove_dead_sharks(self._sim_turn)
         fed_sharks_oid_dict = self._feed_sharks()
-        fed_and_moved_oid_list = self._breed_animals(fed_sharks_oid_dict=fed_sharks_oid_dict)
-        self._move_remaining_animals(already_moved_oid_list=fed_and_moved_oid_list)
+        fed_and_moved_oid_dict = self._breed_animals(fed_sharks_oid_dict=fed_sharks_oid_dict)
+        self._move_remaining_animals(already_moved_oid_dict=fed_and_moved_oid_dict)
 
         _logger.debug('********************END TURN: {:<3}*******************'.format(self._sim_turn))
         self.sim_ended = self._check_simulation_ends()
@@ -165,9 +181,18 @@ class SimpleSimulationEngine(SimulationEngine):
             self.persist_to_db()
 
     def _remove_dead_sharks(self, sim_turn):
-        self._fish_tank.remove_starved_sharks(self._sim_turn, self._shark_starving)
+        """
+        Wrapper to call fish tank to remove starved sharks
+        :param sim_turn: Current simulation turn
+        """
+        self._fish_tank.remove_starved_sharks(sim_turn, self._shark_starving)
 
-    def _feed_sharks(self):
+    def _feed_sharks(self) -> Dict[int, Tuple]:
+        """
+        Feed sharks by looking for available fish.  If found, then remove the fish, and move the shark to the new
+        coordinates.
+        :return: Dictionary of shark oid to shark coordinates
+        """
         fed_sharks_oid_dict = {}
         current_sharks_tuple_list = self._fish_tank.get_current_sharks()
         for shark_coord, shark in current_sharks_tuple_list:
@@ -182,10 +207,15 @@ class SimpleSimulationEngine(SimulationEngine):
                 fed_sharks_oid_dict[shark.oid] = shark_coord
         return fed_sharks_oid_dict
 
-    def _move_remaining_animals(self, already_moved_oid_list):
+    def _move_remaining_animals(self, already_moved_oid_dict):
+        """
+        Move any animals that haven't already moved
+        TODO implement move greater than 1 square
+        :param already_moved_oid_dict: Dictionary of animal oid to coordinates already moved
+        """
         fish_tank_grid = self._fish_tank.get_grid()
         for coord, animal in fish_tank_grid.copy().items():
-            if animal.oid not in already_moved_oid_list:
+            if animal.oid not in already_moved_oid_dict:
                 _logger.debug("_move_remaining_animals() - looking at animal ({}) in [{}]".format(animal.oid, coord))
                 available_neighbors = self._fish_tank.find_available_nearby_space(coord)
                 if len(available_neighbors) > 0:
@@ -193,11 +223,12 @@ class SimpleSimulationEngine(SimulationEngine):
                     self._fish_tank.move_animal(coord, animal, move_coord)
                     _logger.debug("_move_remaining_animals() - move animal ({}) to [{}]".format(animal.oid, move_coord))
 
-    def _breed_animals(self, fed_sharks_oid_dict):
+    def _breed_animals(self, fed_sharks_oid_dict) -> Dict[int, Tuple]:
         """
         Breed animals where possible
         Sharks first, but must check if they have fed (which indicates movement)
         :param fed_sharks_oid_dict: dict of shark oid to original coords in turn. Tracks already moved animals.
+        :return: Dictionary of animal oid to animal coordinates
         """
         already_moved_animals = fed_sharks_oid_dict
         fish_tank_grid = self._fish_tank.get_grid()
@@ -211,6 +242,13 @@ class SimpleSimulationEngine(SimulationEngine):
         # TODO collect Audit actions
 
     def _breed_fish(self, animal, coord, already_moved_animals):
+        """
+        Breed fish
+        :param animal:Fish to check for breeding
+        :param coord: Current coordinates of fish
+        :param already_moved_animals: Animals that have already moved.
+                                        Append to this list for movement due to breeding
+        """
         if (self._sim_turn - animal.spawn_turn) >= self._fish_breed_maturity:
             # fish can breed
             if random.randint(0, 100) <= self._fish_breed_probability:
@@ -227,6 +265,14 @@ class SimpleSimulationEngine(SimulationEngine):
                     self._fish_breed_total += 1
 
     def _breed_shark(self, animal, coord, already_moved_animals):
+        """
+        Breed shark.  Different method to fish, since sharks can feed first.
+        :param animal: Shark  to check for breeding
+        :param coord: Current coordinates of shark
+        :param already_moved_animals: Animals that have already moved.
+                                        Append to this list for movement due to breeding
+        """
+
         if (self._sim_turn - animal.spawn_turn) >= self._shark_breed_maturity:
             # shark can breed
             if random.randint(0, 100) <= self._shark_breed_probability:
