@@ -1,7 +1,7 @@
 import pytest
 import logging
 
-from fish_bowl.data_struct.fish_tank import FishTank
+from fish_bowl.data_struct.fish_tank import FishTank, PacmanFishTank
 from fish_bowl.data_struct.animals import Shark, Fish
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d:%(message)s")
@@ -116,4 +116,29 @@ class TestFishTank:
         _logger.info(pandas_df.shape)
         _logger.info("dataframe: {}".format(pandas_df))
 
+
+    def test_pacman_fishtank(self):
+        grid_size = 10
+        fish_tank = PacmanFishTank(grid_size)
+
+        # add one fish at (0,0)
+        fish_coord1 = (0, 0)
+        fish1 = Fish(0, 1)
+        fish_tank.put_animal(fish_coord1, fish1)
+
+        # put a shark at 0,9
+        shark_coord1 = (0, 9)
+        shark1 = Shark(0, 1)
+        fish_tank.put_animal(shark_coord1, shark1)
+
+        fish_tuple = fish_tank.find_fish_to_eat(shark_coord1)
+
+        _logger.info(fish_tuple)
+
+        assert fish_tuple is not None
+
+        coord, fish_to_eat = fish_tuple
+        x, y = coord
+        assert x == 0
+        assert y == 0
 

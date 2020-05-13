@@ -5,7 +5,7 @@ import logging
 import pandas as pd
 
 from fish_bowl.process.simulation_engine import SimulationEngine
-from fish_bowl.data_struct.fish_tank import FishTank
+from fish_bowl.data_struct.fish_tank import FishTank, PacmanFishTank
 from fish_bowl.data_struct.animals import *
 
 from fish_bowl.dataio.threaded_persistence import PersistenceClient, get_database_string, Animals
@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 class SimpleSimulationEngine(SimulationEngine):
     start_sid = 1
 
-    def __init__(self, simulation_parameters: Dict):
+    def __init__(self, simulation_parameters: Dict, use_pacman=False):
         """
         Create a simulation and link to its persistence
         :param simulation_parameters:
@@ -26,7 +26,10 @@ class SimpleSimulationEngine(SimulationEngine):
         self._sim_turn = 0
         self._init_simulation(**simulation_parameters)
         self._simulation_parameters = simulation_parameters
-        self._fish_tank = FishTank(self._grid_size)
+        if use_pacman:
+            self._fish_tank = PacmanFishTank(self._grid_size)
+        else:
+            self._fish_tank = FishTank(self._grid_size)
         self._spawn()
         self.sim_ended = False
 

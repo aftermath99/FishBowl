@@ -62,7 +62,7 @@ class FishTank(object):
                     _logger.debug("remove_starved_sharks() - Removing shark ({}) at [{}]".format(animal.oid, coord))
                     self._grid.pop(coord, None)
 
-    def get_current_sharks(self):
+    def get_current_sharks(self) -> List:
         # tuple of coord and animal
         current_sharks = []
         for coord, animal in self._grid.items():
@@ -70,13 +70,15 @@ class FishTank(object):
                 current_sharks.append((coord, animal))
         return current_sharks
 
-    def find_fish_to_eat(self, coord):
+    def find_fish_to_eat(self, coord) -> Tuple:
         """
         Given a shark coordinate, return the first available fish and it's coordinate to eat
+        :param coord: coordinates to start from
+        :return: Tuple of coordinate and fish
         """
         startx, starty = coord
         for k, (x, y) in SQUARE_NEIGH.items():
-            new_coord = (startx + x, starty + y)
+            new_coord = self._generate_find_coordinate(startx, starty, x, y)
             if self.is_valid_grid_coord(coordinates=new_coord, raise_err=False):
                 # normally this should be trace
                 _logger.debug("find_fish_to_eat() - Looking for fish at : [{}]".format(new_coord))
@@ -87,11 +89,13 @@ class FishTank(object):
                     _logger.debug("find_fish_to_eat() - Found fish at : [{}]".format(new_coord))
                     return new_coord, animal
 
-    # action - db records only actions
-    # move
-    # eat
-    # breed
     def eat_fish(self, sim_turn, shark_coord, fish_coord):
+        """
+        A shark eats a fish given both coordinates
+        :param sim_turn: current simulation turn
+        :param shark_coord: shark coordinates
+        :param fish_coord: fish coordinates
+        """
         shark_eater = self._grid[shark_coord]
         fish_eaten = self._grid.pop(fish_coord)
         fish_eaten.alive = False
@@ -100,6 +104,14 @@ class FishTank(object):
         shark_eater.last_fed = sim_turn
         _logger.debug("eat_fish() - Shark {} has eaten fish {} at [{}]".format(shark_eater.oid, fish_eaten.oid,
                                                                                fish_coord))
+
+    def _generate_find_coordinate(self, startx, starty, x, y) -> Tuple:
+        """
+        Generates next coordinate to look for cell evaluation
+        created to allow different grid topologies
+        """
+        new_coord = (startx + x, starty + y)
+        return new_coord
 
     def find_available_nearby_space(self, start_coordinate, shuffle: bool = True):
         """
@@ -111,7 +123,7 @@ class FishTank(object):
         available_neighbors = []
         startx, starty = start_coordinate
         for k, (x, y) in SQUARE_NEIGH.items():
-            new_coord = (startx + x, starty + y)
+            new_coord = self._generate_find_coordinate(startx, starty, x, y)
             if self.is_valid_grid_coord(coordinates=new_coord, raise_err=False):
                 animal = self.check_animal(new_coord)
                 if animal is None:
@@ -148,6 +160,9 @@ class FishTank(object):
         return True
 
     def print_output(self):
+        """
+        Simple debug output print of grid
+        """
         print("")
         for y in range(0, self.grid_size):
             for x in range(0, self.grid_size):
@@ -185,3 +200,29 @@ class FishTank(object):
                     row_list.append("0000")
             str_repr += " ".join(row_list) + "\r\n"
         return str_repr
+
+
+class PacmanFishTank(FishTank):
+    """
+    Demonstrate how to allow pacman style grid topology
+    """
+    def __init__(self, grid_size):
+        super().__init__(grid_size)
+
+    def _generate_find_coordinate(self, startx, starty, x, y):
+        """
+        Pacman specific coordinate generator
+        Allows movement beyond an edge to wrap around to the opposite edge for both x and y
+        """
+        newx = startx + x
+        if newx < 0:
+            newx = self.grid_size - 1
+        elif newx > self.grid_size - 1:
+            newx = newx - self.grid_size
+        newy = starty + y
+        if newy < 0:
+            newy = self.grid_size - 1
+        elif newy > self.grid_size - 1:
+            newy = newy - self.grid_size
+        new_coord = (newx, newy)
+        return new_coord

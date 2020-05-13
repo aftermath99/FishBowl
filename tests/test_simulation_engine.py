@@ -18,7 +18,7 @@ sim_config = {
     'shark_breed_probability': 90,
     'shark_speed': 4,
     'shark_starving': 2,
-    'max_turns': 2
+    'max_turns': 8
 }
 
 
@@ -29,7 +29,7 @@ def current_milli_time():
 class TestSimulationEngine:
 
     def test_fish_bowl_sim_engine(self):
-        simple_sim_engine = SimpleSimulationEngine(sim_config)
+        simple_sim_engine = SimpleSimulationEngine(sim_config.copy())
         simple_sim_engine.display_simple_grid()
 
         for sim_turn in range(sim_config["max_turns"]):
@@ -48,6 +48,28 @@ class TestSimulationEngine:
 
         simple_sim_engine.print_stats()
 
-        assert simple_sim_engine.max_turns == 2
+        assert simple_sim_engine.max_turns == 8
 
+
+    def test_pacman_fish_bowl_sim_engine(self):
+        simple_sim_engine = SimpleSimulationEngine(sim_config.copy(), use_pacman=True)
+        simple_sim_engine.display_simple_grid()
+
+        for sim_turn in range(sim_config["max_turns"]):
+            start_time = current_milli_time()
+            try:
+                simple_sim_engine.play_turn()
+                simple_sim_engine.display_simple_grid()
+            except Exception as e:
+                _logger.error(e)
+                break
+
+            end_time = current_milli_time()
+            _logger.warning('Turn {} duration: {} ms'.format(sim_turn, (end_time - start_time)))
+            if simple_sim_engine.sim_ended:
+                break
+
+        simple_sim_engine.print_stats()
+
+        assert simple_sim_engine.max_turns == 8
 
