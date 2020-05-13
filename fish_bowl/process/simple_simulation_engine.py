@@ -41,6 +41,7 @@ class SimpleSimulationEngine(SimulationEngine):
         self._fish_eaten_total = 0
         self._fish_breed_total = 0
         self._shark_breed_total = 0
+        self._shark_starved_total = 0
 
     def _init_simulation(self, grid_size, init_nb_fish, init_nb_shark, fish_breed_maturity, fish_breed_probability,
                          fish_speed, shark_breed_maturity, shark_breed_probability, shark_speed,
@@ -148,9 +149,11 @@ class SimpleSimulationEngine(SimulationEngine):
         """
         Print accumulated stats
         """
-        _logger.info('print_stats() - sharks bred: {}, fish bred: {}, fish eaten: {}'.format(self._shark_breed_total,
-                                                                                             self._fish_breed_total,
-                                                                                             self._fish_eaten_total))
+        _logger.info('print_stats() - sharks bred: {}, fish bred: {}, fish eaten: {}, sharks starved: {}'
+                     .format(self._shark_breed_total,
+                             self._fish_breed_total,
+                             self._fish_eaten_total,
+                             self._shark_starved_total))
 
     def play_turn(self):
         """
@@ -185,7 +188,8 @@ class SimpleSimulationEngine(SimulationEngine):
         Wrapper to call fish tank to remove starved sharks
         :param sim_turn: Current simulation turn
         """
-        self._fish_tank.remove_starved_sharks(sim_turn, self._shark_starving)
+        number_starved_sharks = self._fish_tank.remove_starved_sharks(sim_turn, self._shark_starving)
+        self._shark_starved_total += number_starved_sharks
 
     def _feed_sharks(self) -> Dict[int, Tuple]:
         """
@@ -326,3 +330,5 @@ class SimpleSimulationEngine(SimulationEngine):
             x, y = coord
             client.save_animal(animal.oid, self._sid, animal.animal_type, animal.spawn_turn,
                                animal.breed_count, animal.last_breed, animal.last_fed, animal.alive, x, y)
+
+        client.save_simstats(self._sid, self._shark_breed_total, self._fish_breed_total, self._fish_eaten_total, self._shark_starved_total)

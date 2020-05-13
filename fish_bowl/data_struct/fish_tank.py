@@ -67,19 +67,24 @@ class FishTank(object):
                 number_sharks += 1
         return number_sharks
 
-    def remove_starved_sharks(self, current_turn, shark_starving):
+    def remove_starved_sharks(self, current_turn, shark_starving) -> int:
         """
         Remove starved sharks
         :param current_turn: The current simulation turn
         :param shark_starving: number of turns before a shark can starve (simulation param)
+        :return: number of starved (for stats)
         """
         _logger.debug("remove_starved_sharks() - sim turn {}".format(current_turn))
+        number_starved_sharks = 0
         for coord, animal in self._grid.copy().items():
             if animal.animal_type == Animal.Shark:
                 turns_not_fed = current_turn - animal.last_fed
                 if turns_not_fed > shark_starving:
+                    animal.alive = False
+                    number_starved_sharks += 1
                     _logger.debug("remove_starved_sharks() - Removing shark ({}) at [{}]".format(animal.oid, coord))
                     self._grid.pop(coord, None)
+        return number_starved_sharks
 
     def get_current_sharks(self) -> List:
         """

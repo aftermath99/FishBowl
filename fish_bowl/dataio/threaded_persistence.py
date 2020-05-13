@@ -31,6 +31,18 @@ class FishTankGrid(Base):
     __table_args__ = ({'schema': schema})
 
 
+class SimStats(Base):
+    __tablename__ = 'SIMSTATS'
+    sim_stats_id = Column(Integer, primary_key=True, autoincrement=True)
+    sim_id = Column(Integer)
+    shark_breed_total = Column(Integer)
+    fish_breed_total = Column(Integer)
+    fish_eaten_total = Column(Integer)
+    shark_starved_total = Column(Integer)
+
+    __table_args__ = ({'schema': schema})
+
+
 class Simulation(Base):
     __tablename__ = 'SIMULATIONS'
     int_sid = Column(Integer, primary_key=True, autoincrement=True)
@@ -124,6 +136,15 @@ class PersistenceClient(SQLAlchemyQueries):
             s.add(animal)
             s.flush()
 
+    def get_animal(self, oid) -> Animals:
+        """
+        Retrieve an animal by oid
+        :param oid:
+        """
+        _logger.debug("get_animal")
+        with self.session_scope() as s:
+            return s.query(Animals).filter(Animals.oid == oid).one()
+
     def save_tankgrid(self, sid, sim_turn, grid_str):
         """
         Capture the state of the tank as a string
@@ -141,3 +162,27 @@ class PersistenceClient(SQLAlchemyQueries):
         _logger.debug("get_tankgrid")
         with self.session_scope() as s:
             return s.query(FishTankGrid).filter(FishTankGrid.sid == sid, FishTankGrid.sim_turn == sim_turn).one()
+
+    def save_simstats(self, sim_id, shark_breed_total, fish_breed_total, fish_eaten_total, shark_starved_total):
+        """
+        Save simulation statistics
+        """
+        _logger.debug("save_simstats")
+        sim_stats = SimStats(sim_id=sim_id,
+                             shark_breed_total=shark_breed_total,
+                             fish_breed_total=fish_breed_total,
+                             fish_eaten_total=fish_eaten_total,
+                             shark_starved_total=shark_starved_total)
+        with self.session_scope() as s:
+            s.add(sim_stats)
+            s.flush()
+
+    def get_simstats(self, sim_id) -> SimStats:
+        """
+        Retrieve sim statistics
+        :param sim_id: simulation id
+        :return: SimStats object
+        """
+        _logger.debug("get_simstats")
+        with self.session_scope() as s:
+            return s.query(SimStats).filter(SimStats.sim_id == sim_id).one()
