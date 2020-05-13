@@ -27,7 +27,7 @@ sim_config_2 = {
   "fish_speed": 2,
   "init_nb_shark": 5,
   "shark_breed_maturity": 5,
-  "shark_breed_probability": 80,
+  "shark_breed_probability": 30,
   "shark_speed": 4,
   "shark_starving": 4,
   'max_turns': 100

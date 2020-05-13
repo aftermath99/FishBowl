@@ -78,8 +78,9 @@ class SQLAlchemyQueries:
         if 'sqlite' in database_url:
             # no pool recycling for in-memory sqlite, disable it
             self._engine = create_engine(database_url, pool_recycle=-1)
+
         else:
-            kwargs = {'pool_recycle': POOL_RECYCLE, 'pool_size': POOL_SIZE}
+            kwargs = {'pool_recycle': POOL_RECYCLE, 'pool_size': POOL_SIZE, 'poolclass': 'StaticPool'}
             self.engine = create_engine(database_url, **kwargs)
         self._session_maker = sessionmaker(bind=self._engine, expire_on_commit=expire_on_commit)
         if declarative_base:

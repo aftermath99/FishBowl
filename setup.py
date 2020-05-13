@@ -9,5 +9,5 @@ setup(
     license='',
     author='Pierre Carotti',
     author_email='pierre.carotti@gmail.com',
-    description='Predator-Prey simulation', install_requires=['pytest']
+    description='Predator-Prey simulation', install_requires=['pytest', 'sqlalchemy', 'pandas']
 )

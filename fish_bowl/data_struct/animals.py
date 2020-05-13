@@ -14,6 +14,8 @@ class Fish(object):
         self.breed_count = 0
         self.last_breed = 0
         self.alive = True
+        # Is not needed for fish - added for persistence
+        self.last_fed = 0
 
     def __repr__(self):
         return "{}".format(self.oid)
@@ -29,14 +31,3 @@ class Shark(Fish):
         self.animal_type = Animal.Shark
         # turn of last fed same as spawn at construction
         self.last_fed = spawn_turn
-
-    # oid =
-    # sim_id =
-    # animal_type =
-    # spawn_turn =
-    # breed_count =
-    # last_breed =
-    # last_fed =
-    # alive =
-    # coord_x =
-    # coord_y =

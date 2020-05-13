@@ -8,6 +8,8 @@ from fish_bowl.process.simulation_engine import SimulationEngine
 from fish_bowl.data_struct.fish_tank import FishTank
 from fish_bowl.data_struct.animals import *
 
+from fish_bowl.dataio.threaded_persistence import PersistenceClient, get_database_string, Animals
+
 _logger = logging.getLogger(__name__)
 
 
@@ -28,6 +30,7 @@ class SimpleSimulationEngine(SimulationEngine):
         self._spawn()
         self.sim_ended = False
 
+        self._fish_eaten_total = 0
         self._fish_breed_total = 0
         self._shark_breed_total = 0
 
@@ -123,8 +126,12 @@ class SimpleSimulationEngine(SimulationEngine):
             return False
 
     def print_stats(self):
-        _logger.info('print_stats() - sharks bred: {}, fish bred: {}'.format(self._shark_breed_total,
-                                                                             self._fish_breed_total))
+        """
+        Print accumulated stats
+        """
+        _logger.info('print_stats() - sharks bred: {}, fish bred: {}, fish eaten: {}'.format(self._shark_breed_total,
+                                                                                             self._fish_breed_total,
+                                                                                             self._fish_eaten_total))
 
     def play_turn(self):
         """
@@ -151,6 +158,8 @@ class SimpleSimulationEngine(SimulationEngine):
 
         _logger.debug('********************END TURN: {:<3}*******************'.format(self._sim_turn))
         self.sim_ended = self._check_simulation_ends()
+        if self.sim_ended:
+            self.persist_to_db()
 
     def _remove_dead_sharks(self, sim_turn):
         self._fish_tank.remove_starved_sharks(self._sim_turn, self._shark_starving)
@@ -166,6 +175,7 @@ class SimpleSimulationEngine(SimulationEngine):
             else:
                 fish_coord, fish_to_eat = fish_tuple
                 self._fish_tank.eat_fish(self._sim_turn, shark_coord, fish_coord)
+                self._fish_eaten_total += 1
                 fed_sharks_oid_dict[shark.oid] = shark_coord
         return fed_sharks_oid_dict
 
@@ -224,7 +234,9 @@ class SimpleSimulationEngine(SimulationEngine):
                     # use original coord
                     breed_coord = already_moved_animals[animal.oid]
                     self._fish_tank.put_animal(breed_coord, baby_shark)
-                    _logger.debug("_breed_shark() - new shark ({}) to [{}] from parent ({})".format(baby_shark.oid, breed_coord, animal.oid))
+                    _logger.debug(
+                        "_breed_shark() - new shark ({}) to [{}] from parent ({})".format(baby_shark.oid, breed_coord,
+                                                                                          animal.oid))
                     self._shark_breed_total += 1
 
                 else:
@@ -235,7 +247,8 @@ class SimpleSimulationEngine(SimulationEngine):
                         baby_shark = Shark(self._sid, self._sim_turn)
                         move_parent_coord = available_neighbors[0]
                         self._fish_tank.move_animal(coord, animal, move_parent_coord)
-                        _logger.debug("_breed_shark() - move parent shark ({}) to [{}]".format(animal.oid, move_parent_coord))
+                        _logger.debug(
+                            "_breed_shark() - move parent shark ({}) to [{}]".format(animal.oid, move_parent_coord))
                         already_moved_animals[animal.oid] = coord
                         self._fish_tank.put_animal(coord, baby_shark)
                         _logger.debug("_breed_shark() - new shark ({}) at [{}]".format(baby_shark.oid, coord))
@@ -248,3 +261,19 @@ class SimpleSimulationEngine(SimulationEngine):
     @property
     def max_turns(self):
         return self._max_turns
+
+    def persist_to_db(self):
+        """
+        Persist all audit actions to database
+        TODO Should accumulate audit actions within the simulation engine and call this method with a batch of items
+        rather than single calls to the database for each object
+        """
+        client = PersistenceClient(get_database_string())
+        sim_params = self._simulation_parameters
+        sim_params["sid"] = self._sid
+        client.save_sim_params(**sim_params)
+        fish_tank_grid = self._fish_tank.get_grid()
+        for coord, animal in fish_tank_grid.items():
+            x, y = coord
+            client.save_animal(animal.oid, self._sid, animal.animal_type, animal.spawn_turn,
+                               animal.breed_count, animal.last_breed, animal.last_fed, animal.alive, x, y)

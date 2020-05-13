@@ -1,11 +1,9 @@
 import logging
 from typing import Dict, List, Tuple
 import random
-import numpy as np
 import pandas as pd
 
 from fish_bowl.process.topology import SQUARE_NEIGH, TopologyError
-
 from fish_bowl.process.utils import Animal
 
 _logger = logging.getLogger(__name__)
