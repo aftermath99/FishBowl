@@ -2,6 +2,7 @@ import logging
 import time
 
 from fish_bowl.process.simple_simulation_engine import SimpleSimulationEngine
+from fish_bowl.scripts.run_simple_simulation_engine import execute_simulation
 
 _logger = logging.getLogger(__name__)
 
@@ -41,26 +42,5 @@ def current_milli_time():
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(filename)s:[%(lineno)d]: %(message)s")
 
-    total_start_time = current_milli_time()
-    simulation_engine = SimpleSimulationEngine(sim_config)
-    simulation_engine.display_simple_grid()
-    _logger.info('max_turns: {}'.format(simulation_engine.max_turns))
-
-    for sim_turn in range(simulation_engine.max_turns):
-        start_time = current_milli_time()
-        _logger.info('Turn: {}'.format(simulation_engine.sim_turn))
-        try:
-            simulation_engine.play_turn()
-            simulation_engine.display_simple_grid()
-        except Exception as e:
-            _logger.error(e)
-            break
-        end_time = current_milli_time()
-        _logger.warning('Turn {} duration: {} ms'.format(sim_turn, (end_time - start_time)))
-        if simulation_engine.sim_ended:
-            _logger.warning("Simulation has ended")
-            break
-
-    total_end_time = current_milli_time()
-    _logger.warning('Total duration: {} ms'.format(total_end_time - total_start_time))
-    simulation_engine.print_stats()
+    start_time = current_milli_time()
+    execute_simulation(start_time, sim_config)

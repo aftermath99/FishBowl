@@ -12,10 +12,33 @@ def current_milli_time():
     return int(round(time.time() * 1000))
 
 
+def execute_simulation(total_start_time, sim_config):
+    simulation_engine = SimpleSimulationEngine(sim_config)
+    simulation_engine.display_simple_grid()
+    _logger.info('max_turns: {}'.format(simulation_engine.max_turns))
+    for sim_turn in range(simulation_engine.max_turns):
+        start_time = current_milli_time()
+        _logger.info('Turn: {}'.format(simulation_engine.sim_turn))
+        try:
+            simulation_engine.play_turn()
+            simulation_engine.display_simple_grid()
+        except Exception as e:
+            _logger.error(e)
+            break
+        end_time = current_milli_time()
+        _logger.warning('Turn {} duration: {} ms'.format(sim_turn, (end_time - start_time)))
+        if simulation_engine.sim_ended:
+            _logger.warning("Simulation has ended")
+            break
+    total_end_time = current_milli_time()
+    _logger.warning('Total duration: {} ms'.format(total_end_time - total_start_time))
+    simulation_engine.print_stats()
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(filename)s:[%(lineno)d]: %(message)s")
 
-    total_start_time = current_milli_time()
+    start_time = current_milli_time()
     cmd_parser = argparse.ArgumentParser()
     cmd_parser.add_argument('--config_name', default='simulation_config_1',
                             help='Simulation configuration file name')
@@ -31,25 +54,4 @@ if __name__ == '__main__':
     # Load simulation configuration
     sim_config = read_simulation_config(args.config_name)
 
-    simulation_engine = SimpleSimulationEngine(sim_config)
-    simulation_engine.display_simple_grid()
-    _logger.info('max_turns: {}'.format(simulation_engine.max_turns))
-
-    for sim_turn in range(simulation_engine.max_turns):
-        start_time = current_milli_time()
-        _logger.info('Turn: {}'.format(simulation_engine.sim_turn))
-        try:
-            simulation_engine.play_turn()
-            simulation_engine.display_simple_grid()
-        except Exception as e:
-            _logger.error(e)
-            break
-        end_time = current_milli_time()
-        _logger.warning('Turn {} duration: {} ms'.format(sim_turn, (end_time - start_time)))
-        if simulation_engine.sim_ended:
-            _logger.warning("Simulation has ended")
-            break
-
-    total_end_time = current_milli_time()
-    _logger.warning('Total duration: {} ms'.format(total_end_time - total_start_time))
-    simulation_engine.print_stats()
+    execute_simulation(start_time, sim_config)

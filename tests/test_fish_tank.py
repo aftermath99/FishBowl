@@ -10,7 +10,7 @@ _logger = logging.getLogger(__name__)
 
 class TestFishTank:
 
-    def test_insert_and_get_fish(self):
+    def test_insert_and_move_fish(self):
 
         grid_size = 10
         fish_tank = FishTank(grid_size)
@@ -116,6 +116,7 @@ class TestFishTank:
         _logger.info(pandas_df.shape)
         _logger.info("dataframe: \r\n{}".format(pandas_df))
 
+    # TODO need negative test
 
     def test_pacman_fishtank(self):
         grid_size = 10
